@@ -153,7 +153,7 @@ class OptConstraints(OptRules):
 
         # Añadir todas las restricciones al modelo
         model.Max_gen         = pyo.Constraint(model.G, model.T, rule=max_limits_gen)
-        model.Min_gen         = pyo.Constraint(model.G, model.T, rule=min_limits_gen)
+        #model.Min_gen         = pyo.Constraint(model.G, model.T, rule=min_limits_gen)
         model.PV_gen_limit    = pyo.Constraint(model.PVgen, model.T, rule=pv_generation_limit_rule)
         model.W_gen_limit     = pyo.Constraint(model.Wgen, model.T, rule=w_generation_limit_rule)
         model.NodalBalance    = pyo.Constraint(model.B, model.T, rule=nodal_balance_rule)
@@ -191,7 +191,47 @@ class OptObjective(OptRules):
 # ==========================
 class OutputManager(OptRules):
     def get_var(self, variable, index_names):
-        var_values = pd.DataFrame.from_dict(variable.extract_values(), orient='index', columns=[str(variable)])
+        var_values = pd.DataFrame.from_dict(
+            variable.extract_values(),
+            orient='index',
+            columns=[str(variable)]
+        )
         var_values.index = pd.MultiIndex.from_tuples(var_values.index)
         var_values.index.names = index_names
         return var_values
+
+    def get_dual_prices(self, constraint, index_names, model, divide_by_dt=True, colname="dual"):
+        if not hasattr(model, "dual"):
+            raise ValueError("Falta model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT).")
+        dt = getattr(self.time, "get_timestep", lambda: 1.0)()
+        data = {}
+        for idx in constraint:
+            con_comp = constraint[idx]
+            if (con_comp is None) or (not con_comp.active):
+                continue
+            mu = model.dual.get(con_comp, None)
+            if mu is None:
+                continue
+            val = mu / dt if (divide_by_dt and dt != 0) else mu
+            data[idx] = val
+        df = pd.DataFrame.from_dict(data, orient='index', columns=[colname])
+        if not df.empty:
+            if isinstance(next(iter(data.keys())), tuple):
+                df.index = pd.MultiIndex.from_tuples(df.index)
+                if len(index_names) == df.index.nlevels:
+                    df.index.names = index_names
+                else:
+                    df.index.names = (index_names + [None]*df.index.nlevels)[:df.index.nlevels]
+            else:
+                df.index.name = index_names[0] if index_names else None
+            df.sort_index(inplace=True)
+        return df
+
+    def get_LMPs(self, model, divide_by_dt=True):
+        return self.get_dual_prices(
+            constraint=model.NodalBalance,
+            index_names=["bus", "t"],
+            model=model,
+            divide_by_dt=divide_by_dt,
+            colname="LMP"
+        )
