@@ -13,11 +13,41 @@ class PhotovoltaicGen:
         else:
             return reader.get_column(self.archivo, self.hoja, column)
         
-    def get_perfil_solar(self, column, keys= None):  # Verificar
-        if keys:
-            return float(reader.get_column(self.archivo, self.hoja_ps, f"_{column}")[keys-1])
-        else:
-            return reader.get_column(self.archivo, self.hoja_ps, f"_{column}")
+    def _get_profile_series(self, column):
+        """
+        Devuelve la serie completa (como floats) asociada al nodo indicado.
+        """
+        valores = reader.get_column(self.archivo, self.hoja_ps, f"_{column}")
+        return [float(v) for v in valores]
+
+    def get_perfil_solar(self, column, keys=None):  # Verificar
+        serie = self._get_profile_series(column)
+
+        if not serie:
+            raise ValueError(f"No se encontró perfil solar para el nodo '{column}'.")
+
+        if keys is None:
+            return serie
+
+        try:
+            tiempo = int(keys)
+        except (TypeError, ValueError):
+            raise ValueError(f"Índice de tiempo inválido '{keys}' para el perfil solar del nodo '{column}'.")
+
+        tiempos = reader.get_column(self.archivo, self.hoja_ps, 'time')
+        mapa_tiempos = {int(t): idx for idx, t in enumerate(tiempos)}
+
+        if tiempo not in mapa_tiempos:
+            raise ValueError(f"El tiempo {keys} no existe en el perfil solar del nodo '{column}'.")
+
+        idx = mapa_tiempos[tiempo]
+
+        if idx >= len(serie):
+            raise ValueError(
+                f"El tiempo {keys} está fuera del rango del perfil solar del nodo '{column}'."
+            )
+
+        return serie[idx]
         
     def get_names(self, keys= None):
         return self.get('name', keys)    
