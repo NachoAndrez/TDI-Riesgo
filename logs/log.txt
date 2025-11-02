@@ -1,0 +1,33 @@
+
+Gurobi 12.0.3 (win64) logging started Sat Nov  1 18:06:23 2025
+
+Set parameter LogFile to value "logs//log.txt"
+Gurobi Optimizer version 12.0.3 build v12.0.3rc0 (win64 - Windows 11.0 (26100.2))
+
+CPU model: Intel(R) Core(TM) i9-14900K, instruction set [SSE2|AVX|AVX2]
+Thread count: 24 physical cores, 32 logical processors, using up to 4 threads
+
+Non-default parameters:
+MIPGap  0.005
+Threads  4
+
+Optimize a model with 1560 rows, 2400 columns and 3888 nonzeros
+Model fingerprint: 0xba839bcb
+Variable types: 1536 continuous, 864 integer (864 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [5e+00, 1e+03]
+  Bounds range     [6e-02, 1e+00]
+  RHS range        [3e-02, 4e+04]
+Found heuristic solution: objective 2880000.0000
+Presolve removed 1560 rows and 2400 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds (0.00 work units)
+Thread count was 1 (of 32 available processors)
+
+Solution count 2: 2.14296e+06 2.88e+06 
+
+Optimal solution found (tolerance 5.00e-03)
+Best objective 2.142960000000e+06, best bound 2.142960000000e+06, gap 0.0000%
